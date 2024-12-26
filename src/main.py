@@ -1,29 +1,23 @@
 #!/opt/homebrew/bin/python3
 
-from textnode import TextType, TextNode, split_nodes_delimiter
+from textnode import TextType, TextNode
 from htmlnode import HTMLNode, LeafNode, ParentNode
+import subprocess
+
+def rec_file_copy():
+    result = subprocess.run(["ls", "-la", "../static/"], capture_output=True, text=True)
+    print(result.stdout)
+    result = subprocess.run(["ls", "-la", "../public"], capture_output=True, text=True)
+    print(result.stdout)
+    result = subprocess.run(["rm", "-rf", "../public/"], capture_output=True, text=True)
+    print(result.stdout)
+    result = subprocess.run(["cp", "-r", "../static/", "../public/"], capture_output=True, text=True)
+    print(result.stdout)
+    result = subprocess.run(["ls", "-la", "../public"], capture_output=True, text=True)
+    print(result.stdout)
 
 def main():
-
-    test = TextNode("hello", TextType.IMAGE, "http://www.google.com")
-    print(test.__repr__())
-
-    node = HTMLNode("a", "value text", None, {"href": "https://www.google.com"})
-    print(node.__repr__())
-
-    node2 = ParentNode(
-        "p",
-        [
-            LeafNode("b", "Bold text"),
-            LeafNode(None, "Normal text"),
-        ]
-    )
-    print(node2.to_html())
-
-
-
-    
-
+    rec_file_copy("source", "dest")
     return
 
 main()

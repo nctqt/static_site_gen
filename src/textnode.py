@@ -41,17 +41,19 @@ def text_node_to_html_node(text_node):
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
     new_nodes = []
     for old_node in old_nodes:
-        if old_node.text_type == TextType.TEXT:
-            split_text = old_node.value.split(delimiter)
-            if len(split_text) % 2 == 0:
-                raise Exception("no back delimiter")
-            index = 0
-            for item in split_text:
-                if index % 2 == 0:
-                    type = TextType.TEXT
-                else:
-                    type = text_type
-                new_nodes.append(TextNode(item, type))
-                index += 1
-        else: new_nodes.append(old_node)
+        if old_node.text_type != TextType.TEXT:
+            new_nodes.append(old_node)
+            continue
+        split_nodes = []
+        sections = old_node.text.split(delimiter)
+        if len(sections) % 2 == 0:
+            raise ValueError("Invalid markdown, formatted section not closed")
+        for i in range(len(sections)):
+            if sections[i] == "":
+                continue
+            if i % 2 == 0:
+                split_nodes.append(TextNode(sections[i], TextType.TEXT))
+            else:
+                split_nodes.append(TextNode(sections[i], text_type))
+        new_nodes.extend(split_nodes)
     return new_nodes
