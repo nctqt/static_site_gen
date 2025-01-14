@@ -1,7 +1,6 @@
 from htmlnode import ParentNode
-from processing import text_to_textnodes
+from inline_markdown import text_to_textnodes
 from textnode import text_node_to_html_node
-import re
 
 block_type_paragraph = "paragraph"
 block_type_heading = "heading"
@@ -13,45 +12,46 @@ block_type_ulist = "unordered_list"
 
 def markdown_to_blocks(markdown):
     blocks = markdown.split("\n\n")
-    stripped = []
+    filtered_blocks = []
     for block in blocks:
-        temp = block.strip()
-        if temp != "":
-            stripped.append(temp)
-    return stripped
+        if block == "":
+            continue
+        block = block.strip()
+        filtered_blocks.append(block)
+    return filtered_blocks
 
-def block_to_block_type(md_string):
-    if re.search(r"^#{1,6} ", md_string):
-        return "heading"
-    elif re.search(r"^\`{3}[\S\s]+\`{3}$", md_string):
-        return "code"
-    elif re.search(r"^>", md_string):
-        lines = md_string.splitlines()
+
+def block_to_block_type(block):
+    lines = block.split("\n")
+
+    if block.startswith(("# ", "## ", "### ", "#### ", "##### ", "###### ")):
+        return block_type_heading
+    if len(lines) > 1 and lines[0].startswith("```") and lines[-1].startswith("```"):
+        return block_type_code
+    if block.startswith(">"):
         for line in lines:
-            if not re.search(r"^>", line):
-                return "paragraph"
-        return "quote"
-    elif re.search(r"^[*-] ", md_string):
-        lines = md_string.splitlines()
+            if not line.startswith(">"):
+                return block_type_paragraph
+        return block_type_quote
+    if block.startswith("* "):
         for line in lines:
-            if not re.search(r"^[*-] ", line):
-                return "paragraph"
-        return "unordered_list"
-    elif re.search(r"^(\d+)\.", md_string):
-        lines = md_string.splitlines()
-        temp = re.findall(r"^(\d+)\.", md_string)
-        index = int(temp[0])
-        if index != 1:
-            return "paragraph"
+            if not line.startswith("* "):
+                return block_type_paragraph
+        return block_type_ulist
+    if block.startswith("- "):
         for line in lines:
-            if not re.search(r"^(\d+)\.", line):
-                return "paragraph"
-            if int(re.findall(r"^(\d+)\.", line)[0]) != (index):
-                return "paragraph"
-            index += 1
-        return "ordered_list"
-    else:
-        return "paragraph"
+            if not line.startswith("- "):
+                return block_type_paragraph
+        return block_type_ulist
+    if block.startswith("1. "):
+        i = 1
+        for line in lines:
+            if not line.startswith(f"{i}. "):
+                return block_type_paragraph
+            i += 1
+        return block_type_olist
+    return block_type_paragraph
+
 
 def markdown_to_html_node(markdown):
     blocks = markdown_to_blocks(markdown)
@@ -60,6 +60,7 @@ def markdown_to_html_node(markdown):
         html_node = block_to_html_node(block)
         children.append(html_node)
     return ParentNode("div", children, None)
+
 
 def block_to_html_node(block):
     block_type = block_to_block_type(block)
